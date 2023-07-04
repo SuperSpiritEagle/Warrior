@@ -14,10 +14,10 @@ namespace Warrior
 
     class Battlefield
     {
-        private Platoon _platoonRed = new Platoon();
-        private Platoon _platoonBlue = new Platoon();
-        private Soldier _firstSolider;
-        private Soldier _secondSolider;
+        private Platoon _redPlatoon = new Platoon();
+        private Platoon _blueplatoon = new Platoon();
+        private Soldier _redSolider;
+        private Soldier _blueSolider;
 
         public void Play()
         {
@@ -30,24 +30,28 @@ namespace Warrior
 
         public void Battle()
         {
-            while (_platoonRed.GetCountSolders() > 0 && _platoonBlue.GetCountSolders() > 0)
+            while (_redPlatoon.GetCountSolders() > 0 && _blueplatoon.GetCountSolders() > 0)
             {
-                _firstSolider = _platoonRed.GetSoldier();
-                _secondSolider = _platoonBlue.GetSoldier();
+                _redSolider = _redPlatoon.GetSoldier();
+                _blueSolider = _blueplatoon.GetSoldier();
 
                 Console.WriteLine("Красный взвод:");
-                _platoonRed.ShowSoldiers();
+                _redPlatoon.ShowSoldiers();
 
                 Console.WriteLine("Синий взвод:");
-                _platoonBlue.ShowSoldiers();
+                _blueplatoon.ShowSoldiers();
 
-                _firstSolider.TakeDamage(_secondSolider.Damage);
-                _secondSolider.TakeDamage(_firstSolider.Damage);
+                _redSolider.Attack(_blueSolider);
+                _redSolider.TakeDamage(_blueSolider.Damage);
 
-                _firstSolider.SuperAttack();
-                _secondSolider.SuperAttack();
+                _blueSolider.Attack(_redSolider);
+                _blueSolider.TakeDamage(_redSolider.Damage);
 
-                RemoveSoldierFromPlatoon();
+                _redSolider.SuperAttack();
+                _blueSolider.SuperAttack();
+
+                RemoveSoldierFromPlatoon(_redSolider, _redPlatoon);
+                RemoveSoldierFromPlatoon(_blueSolider, _blueplatoon);
 
                 Console.ReadKey();
                 Console.Clear();
@@ -56,30 +60,25 @@ namespace Warrior
 
         private void ShowBattleResult()
         {
-            if (_platoonRed.GetCountSolders() < 0 && _platoonBlue.GetCountSolders() < 0)
+            if (_redPlatoon.GetCountSolders() < 0 && _blueplatoon.GetCountSolders() < 0)
             {
                 Console.WriteLine("Ничья, оба взвода погибли");
             }
-            else if (_platoonRed.GetCountSolders() <= 0)
+            else if (_redPlatoon.GetCountSolders() <= 0)
             {
                 Console.WriteLine("Победила синяя страна");
             }
-            else if (_platoonBlue.GetCountSolders() <= 0)
+            else if (_blueplatoon.GetCountSolders() <= 0)
             {
                 Console.WriteLine("Победила красная страна");
             }
         }
 
-        private void RemoveSoldierFromPlatoon()
+        private void RemoveSoldierFromPlatoon(Soldier soldier, Platoon platoon)
         {
-            if (_firstSolider.Health <= 0)
+            if (soldier.Health <= 0)
             {
-                _platoonRed.RemoveSoldier(_firstSolider);
-            }
-
-            if (_secondSolider.Health <= 0)
-            {
-                _platoonBlue.RemoveSoldier(_secondSolider);
+                platoon.RemoveSoldier(soldier);
             }
         }
     }
@@ -87,7 +86,7 @@ namespace Warrior
     class Platoon
     {
         private List<Soldier> _soldiers = new List<Soldier>();
-        private Random _random = new Random();
+        private static Random _random = new Random();
 
         public Platoon()
         {
@@ -127,28 +126,13 @@ namespace Warrior
 
         private Soldier ChooseSoldier()
         {
-            Random random = new Random();
+            Soldier[] soldiers = { new Infantry(0, 0, 0), new Artillery(0, 0, 0), new AirForce(0, 0, 0) };
 
-            int min = 0;
-            int max = 3;
-            int soldier = random.Next(min, max);
-
-            if (soldier == 0)
-            {
-                return new Infantry(100, 30, 5);
-            }
-            else if (soldier == 2)
-            {
-                return new Artillery(100, 40, 10);
-            }
-            else
-            {
-                return new AirForce(100, 50, 15);
-            }
+            return soldiers[_random.Next(0, soldiers.Length)].Clone();
         }
     }
 
-    class Soldier
+    abstract class Soldier
     {
         public Soldier(int health, int damage, int armor)
         {
@@ -161,10 +145,15 @@ namespace Warrior
         public int Damage { get; protected set; }
         public int Armor { get; protected set; }
 
+        public void Attack(Soldier target)
+        {
+            Console.Write($"Атакую цель: {target.GetType().Name}");
+        }
+
         public void TakeDamage(int damage)
         {
-            Health -= damage - Armor;
-            Console.WriteLine($"\n{GetType().Name} нанёс {damage} урона.");
+            Health -= (Math.Abs(damage - Armor));
+            Console.WriteLine($"\n{GetType().Name} нанёс {damage} урона.\n");
         }
 
         public void ShowInfo()
@@ -189,12 +178,19 @@ namespace Warrior
             }
         }
 
+        public abstract Soldier Clone();
+
         protected virtual void IncreaseStrength() { }
     }
 
     class Infantry : Soldier
     {
         public Infantry(int health, int damage, int armor) : base(health, damage, armor) { }
+
+        public override Soldier Clone()
+        {
+            return new Infantry(100, 30, 5);
+        }
 
         protected override void IncreaseStrength()
         {
@@ -209,6 +205,11 @@ namespace Warrior
     {
         public Artillery(int health, int damage, int armor) : base(health, damage, armor) { }
 
+        public override Soldier Clone()
+        {
+            return new Artillery(100, 40, 10);
+        }
+
         protected override void IncreaseStrength()
         {
             int increaseDamage = 5;
@@ -221,6 +222,11 @@ namespace Warrior
     class AirForce : Soldier
     {
         public AirForce(int health, int damage, int armor) : base(health, damage, armor) { }
+
+        public override Soldier Clone()
+        {
+            return new AirForce(100, 50, 15);
+        }
 
         protected override void IncreaseStrength()
         {
