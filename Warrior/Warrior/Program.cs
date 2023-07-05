@@ -15,7 +15,7 @@ namespace Warrior
     class Battlefield
     {
         private Platoon _redPlatoon = new Platoon();
-        private Platoon _blueplatoon = new Platoon();
+        private Platoon _bluePlatoon = new Platoon();
         private Soldier _redSolider;
         private Soldier _blueSolider;
 
@@ -30,16 +30,16 @@ namespace Warrior
 
         public void Battle()
         {
-            while (_redPlatoon.GetCountSolders() > 0 && _blueplatoon.GetCountSolders() > 0)
+            while (_redPlatoon.HasSoldiers && _bluePlatoon.HasSoldiers)
             {
                 _redSolider = _redPlatoon.GetSoldier();
-                _blueSolider = _blueplatoon.GetSoldier();
+                _blueSolider = _bluePlatoon.GetSoldier();
 
                 Console.WriteLine("Красный взвод:");
                 _redPlatoon.ShowSoldiers();
 
                 Console.WriteLine("Синий взвод:");
-                _blueplatoon.ShowSoldiers();
+                _bluePlatoon.ShowSoldiers();
 
                 _redSolider.Attack(_blueSolider);
                 _redSolider.TakeDamage(_blueSolider.Damage);
@@ -51,7 +51,7 @@ namespace Warrior
                 _blueSolider.SuperAttack();
 
                 RemoveSoldierFromPlatoon(_redSolider, _redPlatoon);
-                RemoveSoldierFromPlatoon(_blueSolider, _blueplatoon);
+                RemoveSoldierFromPlatoon(_blueSolider, _bluePlatoon);
 
                 Console.ReadKey();
                 Console.Clear();
@@ -60,15 +60,15 @@ namespace Warrior
 
         private void ShowBattleResult()
         {
-            if (_redPlatoon.GetCountSolders() < 0 && _blueplatoon.GetCountSolders() < 0)
+            if (_redPlatoon.HasSoldiers && _bluePlatoon.HasSoldiers)
             {
                 Console.WriteLine("Ничья, оба взвода погибли");
             }
-            else if (_redPlatoon.GetCountSolders() <= 0)
+            else if (_redPlatoon.HasSoldiers)
             {
                 Console.WriteLine("Победила синяя страна");
             }
-            else if (_blueplatoon.GetCountSolders() <= 0)
+            else if (_bluePlatoon.HasSoldiers)
             {
                 Console.WriteLine("Победила красная страна");
             }
@@ -76,7 +76,7 @@ namespace Warrior
 
         private void RemoveSoldierFromPlatoon(Soldier soldier, Platoon platoon)
         {
-            if (soldier.Health <= 0)
+            if (soldier.IsDead)
             {
                 platoon.RemoveSoldier(soldier);
             }
@@ -93,6 +93,8 @@ namespace Warrior
             Create(5, _soldiers);
         }
 
+        public bool HasSoldiers => _soldiers.Count > 0;
+
         public void ShowSoldiers()
         {
             foreach (Soldier soldier in _soldiers)
@@ -106,29 +108,19 @@ namespace Warrior
             _soldiers.Remove(soldier);
         }
 
-        public int GetCountSolders()
-        {
-            return _soldiers.Count;
-        }
-
         public Soldier GetSoldier()
         {
-            return _soldiers[_random.Next(0, _soldiers.Count)];
+            return _soldiers[_random.Next(_soldiers.Count)];
         }
 
         private void Create(int numberOfPlatoon, List<Soldier> soldier)
         {
-            for (int i = 0; i < numberOfPlatoon; i++)
-            {
-                soldier.Add(ChooseSoldier());
-            }
-        }
-
-        private Soldier ChooseSoldier()
-        {
             Soldier[] soldiers = { new Infantry(0, 0, 0), new Artillery(0, 0, 0), new AirForce(0, 0, 0) };
 
-            return soldiers[_random.Next(0, soldiers.Length)].Clone();
+            for (int i = 0; i < numberOfPlatoon; i++)
+            {
+                soldier.Add(soldiers[_random.Next(soldiers.Length)].Clone());
+            }
         }
     }
 
@@ -144,6 +136,8 @@ namespace Warrior
         public int Health { get; protected set; }
         public int Damage { get; protected set; }
         public int Armor { get; protected set; }
+
+        public bool IsDead => Health <= 0;
 
         public void Attack(Soldier target)
         {
