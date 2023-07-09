@@ -42,11 +42,8 @@ namespace Warrior
                 _bluePlatoon.ShowSoldiers();
 
                 _redSolider.Attack(_blueSolider);
-                _redSolider.TakeDamage(_blueSolider.Damage);
-
                 _blueSolider.Attack(_redSolider);
-                _blueSolider.TakeDamage(_redSolider.Damage);
-
+              
                 _redSolider.SuperAttack();
                 _blueSolider.SuperAttack();
 
@@ -142,12 +139,8 @@ namespace Warrior
         public void Attack(Soldier target)
         {
             Console.Write($"Атакую цель: {target.GetType().Name}");
-        }
 
-        public void TakeDamage(int damage)
-        {
-            Health -= (Math.Abs(damage - Armor));
-            Console.WriteLine($"\n{GetType().Name} нанёс {damage} урона.\n");
+            TakeDamage(target.Damage);
         }
 
         public void ShowInfo()
@@ -175,6 +168,12 @@ namespace Warrior
         public abstract Soldier Clone();
 
         protected virtual void IncreaseStrength() { }
+
+        private void TakeDamage(int damage)
+        {
+            Health -= (Math.Abs(damage - Armor));
+            Console.WriteLine($"\n{GetType().Name} нанёс {damage} урона.\n");
+        }
     }
 
     class Infantry : Soldier
